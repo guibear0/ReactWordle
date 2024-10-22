@@ -1,0 +1,40 @@
+.wordle-game {
+    text-align: center;
+  }
+  :root{
+    background-color: #303030;
+}
+  .attempts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .word-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+  
+  .word-cell, .word-input-cell {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    font-size: 24px;
+    border: 2px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .word-input-cell {
+    border: 2px solid #000;
+    outline: none;
+  }
+  
+  button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+  

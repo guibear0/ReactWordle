@@ -1,44 +1,54 @@
 // WordleScript.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export const useWordleLogic = () => {
-  const localWords = [
-    'APPLE', 'BAKER', 'CANDY', 'DELTA', 'EAGLE',
-    'FANCY', 'GRAPE', 'HOTEL', 'INPUT', 'JOLLY'
-  ];
-
-  const [currentGuess, setCurrentGuess] = useState(['', '', '', '', '']);
+  const localWords = ["APPLE", "BAKER", "CANDY", "DELTA", "EAGLE"];
+  const [currentGuess, setCurrentGuess] = useState(["", "", "", "", ""]);
   const [attempts, setAttempts] = useState([]);
   const [isGameWon, setIsGameWon] = useState(false);
   const [isGameLost, setIsGameLost] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [word, setWord] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
+  const [word, setWord] = useState("");
   const maxAttempts = 6;
 
+  // Eliminar acentos
+  const removeAccents = (str) =>
+    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    // Función para eliminar acentos
-  const removeAccents = (str) => {
-    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  // Palabra aleatoria
+  const fetchRandomWord = async () => {
+    try {
+      const res = await fetch(
+        "https://rae-api.com/api/random?min_length=5&max_length=5"
+      );
+      if (!res.ok) throw new Error("Error al obtener palabra");
+      const data = await res.json();
+      const apiWord = removeAccents(data.data.word).toUpperCase();
+      setWord(apiWord);
+      console.log("Palabra RAE:", apiWord);
+    } catch (error) {
+      console.error("Error con API, usando fallback:", error);
+      const fallback = localWords[Math.floor(Math.random() * localWords.length)];
+      setWord(fallback);
+      console.log("Palabra fallback:", fallback);
+    }
   };
 
-
-  // Obtener palabra de la API o fallback
-  const fetchRandomWord = async () => {
-  try {
-    const res = await fetch('https://rae-api.com/api/random?min_length=5&max_length=5');
-    if (!res.ok) throw new Error('Error al obtener palabra de RAE API');
-    const data = await res.json();
-    const apiWord = removeAccents(data.data.word).toUpperCase();
-    setWord(apiWord);
-    console.log('Palabra RAE API:', apiWord); 
-  } catch (error) {
-    console.error('Error RAE API, usando fallback:', error);
-    const fallback = localWords[Math.floor(Math.random() * localWords.length)];
-    setWord(fallback);
-    console.log('Palabra fallback:', fallback); 
-  }
-};
-
+  // ✅ Validar si la palabra existe en la RAE o en fallback
+  const validateWord = async (guess) => {
+    try {
+      const res = await fetch(
+        `https://rae-api.com/api/words/${guess.toLowerCase()}`
+        
+      )
+      if (!res.ok) return false;
+      const data = await res.json();
+      return !!data.data?.word;
+    } catch (error) {
+      console.warn("Validación falló, usando fallback:", error);
+      return localWords.includes(guess.toUpperCase());
+    }
+  };
 
   useEffect(() => {
     fetchRandomWord();
@@ -52,27 +62,34 @@ export const useWordleLogic = () => {
     }
   };
 
-  const handleSubmit = () => {
-    setErrorMessage('');
-    if (currentGuess.join('').length < 5) {
-      setErrorMessage('Completa todas las casillas antes de enviar.');
+  const handleSubmit = async () => {
+    setErrorMessage("");
+
+    const guess = currentGuess.join("").toUpperCase();
+    if (guess.length < 5) {
+      setErrorMessage("Completa todas las casillas antes de enviar.");
       return;
     }
 
-    if (!isGameWon && !isGameLost) {
-      const newAttempt = currentGuess.map((char, idx) => {
-        if (char === word[idx]) return { letter: char, status: 'correct' };
-        else if (word.includes(char)) return { letter: char, status: 'present' };
-        else return { letter: char, status: 'absent' };
-      });
-
-      setAttempts([...attempts, newAttempt]);
-
-      if (currentGuess.join('') === word) setIsGameWon(true);
-      else if (attempts.length + 1 === maxAttempts) setIsGameLost(true);
-
-      setCurrentGuess(['', '', '', '', '']);
+    // 🚨 Validar antes de aceptar el intento
+    const isValid = await validateWord(guess);
+    if (!isValid) {
+      setErrorMessage("Esa palabra no está en el diccionario.");
+      return;
     }
+
+    const newAttempt = currentGuess.map((char, idx) => {
+      if (char === word[idx]) return { letter: char, status: "correct" };
+      if (word.includes(char)) return { letter: char, status: "present" };
+      return { letter: char, status: "absent" };
+    });
+
+    setAttempts((prev) => [...prev, newAttempt]);
+
+    if (guess === word) setIsGameWon(true);
+    else if (attempts.length + 1 === maxAttempts) setIsGameLost(true);
+
+    setCurrentGuess(["", "", "", "", ""]);
   };
 
   return {
@@ -84,6 +101,6 @@ export const useWordleLogic = () => {
     word,
     handleInputChange,
     handleSubmit,
-    maxAttempts
+    maxAttempts,
   };
 };

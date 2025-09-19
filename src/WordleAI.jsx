@@ -1,4 +1,4 @@
-import React from 'react';
+import  { useEffect, useRef } from 'react';
 import { useWordleLogic } from './WordleScript';
 import { motion } from 'framer-motion';
 import './AIWordle.css';
@@ -11,23 +11,55 @@ const WordleAI = () => {
     isGameLost,
     handleInputChange,
     handleSubmit,
-    errorMessage,  // Obtenemos el mensaje de error
+    errorMessage,
     maxAttempts,
-    word  // Ahora obtenemos la palabra correcta del hook
+    word
   } = useWordleLogic();
 
+  const inputRefs = useRef([]);
+
+  // Handle key events for input and submission
+  const handleKeyDown = (e, index) => {
+  if (e.key === 'Enter' && currentGuess.every((char) => char !== '')) {
+    handleSubmit();
+  } else if (e.key === 'Backspace') {
+    // Si el input actual está vacío, ir al anterior
+    if (!currentGuess[index] && index > 0) {
+      inputRefs.current[index - 1].focus();
+    }
+  }
+};
+
+  // Handle input changes directly
+  const handleChange = (value, index) => {
+  const upperValue = value.toUpperCase();
+  if (/^[A-Z]$/i.test(upperValue) || value === '') {
+    handleInputChange(upperValue, index);
+
+    if (/^[A-Z]$/i.test(upperValue) && index < currentGuess.length - 1) {
+      inputRefs.current[index + 1].focus();
+    }
+  }
+};
+
+  // Focus first input on mount or after submission
+  useEffect(() => {
+    if (!isGameWon && !isGameLost && attempts.length < maxAttempts) {
+      inputRefs.current[0]?.focus();
+    }
+  }, [attempts, isGameWon, isGameLost, maxAttempts]);
+
   const cellVariants = {
-    initial: { backgroundColor: '#303030' },
-    correct: { backgroundColor: 'rgba(0, 128, 0, 1)', transition: { duration: 0.3, ease: 'easeInOut' } },
-    present: { backgroundColor: 'rgba(255, 165, 0, 1)', transition: { duration: 0.3, ease: 'easeInOut' } },
-    absent: { backgroundColor: 'rgba(128, 128, 128, 1)', transition: { duration: 0.3, ease: 'easeInOut' } },
+    initial: { backgroundColor: '#3a3a3c', },
+    correct: { backgroundColor: '#538d4e', transition: { duration: 0.3, ease: 'easeInOut' } },
+    present: { backgroundColor: '#b59f3b',  transition: { duration: 0.3, ease: 'easeInOut' } },
+    absent: { backgroundColor: '#3a3a3c',  transition: { duration: 0.3, ease: 'easeInOut' } },
   };
 
   const messageVariants = {
     initial: { opacity: 0, y: 10 },
     animate: { opacity: 1, y: 0 },
     exit: { opacity: 0, y: -10 },
-    
   };
 
   return (
@@ -44,7 +76,6 @@ const WordleAI = () => {
                 initial="initial"
                 animate={charObj.status}
                 variants={cellVariants}
-                style={{ width: 50, height: 50 }}
               >
                 {charObj.letter}
               </motion.div>
@@ -60,29 +91,31 @@ const WordleAI = () => {
                 type="text"
                 maxLength="1"
                 value={char}
-                onChange={(e) => handleInputChange(e.target.value, index)}
+                onChange={(e) => handleChange(e.target.value, index)}
+                onKeyDown={(e) => handleKeyDown(e, index)}
                 className="word-input-cell"
+                ref={(el) => (inputRefs.current[index] = el)}
               />
             ))}
           </div>
         )}
 
-        {maxAttempts - attempts.length - 1 > 0 && (
-          Array(maxAttempts - attempts.length - 1).fill(null).map((_, emptyIndex) => (
-            <div key={emptyIndex} className="word-row">
-              {Array(5).fill('').map((_, charIndex) => (
-                <div key={charIndex} className="word-cell"></div>
-              ))}
-            </div>
-          ))
-        )}
+        {maxAttempts - attempts.length - 1 > 0 &&
+          Array(maxAttempts - attempts.length - 1)
+            .fill(null)
+            .map((_, emptyIndex) => (
+              <div key={emptyIndex} className="word-row">
+                {Array(5).fill('').map((_, charIndex) => (
+                  <div key={charIndex} className="word-cell empty"></div>
+                ))}
+              </div>
+            ))}
       </div>
 
       <button onClick={handleSubmit} disabled={isGameWon || isGameLost}>
         Enviar
       </button>
 
-     
       {errorMessage && (
         <motion.p
           className="error-message"
@@ -90,14 +123,12 @@ const WordleAI = () => {
           animate="animate"
           exit="exit"
           variants={messageVariants}
-          style={{ color: 'red' }}
-          duration={1}
+          style={{ color: '#ff4d4d' }}
         >
           {errorMessage}
         </motion.p>
       )}
 
- 
       {isGameWon && (
         <motion.p
           className="game-message"
@@ -105,7 +136,7 @@ const WordleAI = () => {
           animate="animate"
           exit="exit"
           variants={messageVariants}
-          style={{ color: 'green' }}
+          style={{ color: '#538d4e' }}
         >
           ¡Has ganado!
         </motion.p>
@@ -118,7 +149,7 @@ const WordleAI = () => {
           animate="animate"
           exit="exit"
           variants={messageVariants}
-          style={{ color: 'red' }}
+          style={{ color: '#ff4d4d' }}
         >
           ¡Has perdido! La palabra era: {word}
         </motion.p>

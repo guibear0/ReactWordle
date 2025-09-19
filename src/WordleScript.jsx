@@ -1,75 +1,77 @@
+// WordleScript.js
 import { useState, useEffect } from 'react';
 
 export const useWordleLogic = () => {
-  const words = [
-    'apple', 'baker', 'candy', 'delta', 'eagle', 'fancy', 'grape', 'hotel', 'input', 'jolly',
-    'kneel', 'latch', 'march', 'north', 'ocean', 'pride', 'quiet', 'rider', 'slice', 'table',
-    'unity', 'vivid', 'watch', 'xenon', 'yield', 'zebra', 'bliss', 'crane', 'drill', 'event',
-    'flare', 'glide', 'hover', 'icing', 'jumps', 'karma', 'lions', 'mixer', 'notes', 'optic',
-    'plane', 'quake', 'races', 'stone', 'train', 'ultra', 'vapor', 'wires', 'xerox', 'zones',
-    'acorn', 'bloom', 'climb', 'daisy', 'earth', 'flame', 'grows', 'hatch', 'ideal', 'joint',
-    'knees', 'lakes', 'minor', 'nails', 'olive', 'pearl', 'query', 'roses', 'smile', 'taste',
-    'unite', 'vocal', 'winds', 'xenon', 'yarns', 'zeros', 'badge', 'clock', 'dodge', 'equal',
-    'flock', 'gloom', 'heart', 'index', 'judge', 'knife', 'lemon', 'music', 'nerve', 'onion',
-    'piano', 'queen', 'radar', 'shine', 'tiger', 'urban', 'virus', 'wound', 'yacht', 'zippy'
+  const localWords = [
+    'APPLE', 'BAKER', 'CANDY', 'DELTA', 'EAGLE',
+    'FANCY', 'GRAPE', 'HOTEL', 'INPUT', 'JOLLY'
   ];
 
   const [currentGuess, setCurrentGuess] = useState(['', '', '', '', '']);
   const [attempts, setAttempts] = useState([]);
   const [isGameWon, setIsGameWon] = useState(false);
   const [isGameLost, setIsGameLost] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');  // Estado para el mensaje de error
-  const [word, setWord] = useState('');  // Inicializamos la palabra correcta como vacía
+  const [errorMessage, setErrorMessage] = useState('');
+  const [word, setWord] = useState('');
   const maxAttempts = 6;
 
-  // Elegir una palabra aleatoria del array al inicio del juego
-  useEffect(() => {
-    const randomWord = words[Math.floor(Math.random() * words.length)];
-    setWord(randomWord);
-    console.log(randomWord)
-  }, []);  // Este efecto solo se ejecuta una vez al montar el componente
 
-  // Función para manejar cambios en el input
+    // Función para eliminar acentos
+  const removeAccents = (str) => {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  };
+
+
+  // Obtener palabra de la API o fallback
+  const fetchRandomWord = async () => {
+  try {
+    const res = await fetch('https://rae-api.com/api/random?min_length=5&max_length=5');
+    if (!res.ok) throw new Error('Error al obtener palabra de RAE API');
+    const data = await res.json();
+    const apiWord = removeAccents(data.data.word).toUpperCase();
+    setWord(apiWord);
+    console.log('Palabra RAE API:', apiWord); 
+  } catch (error) {
+    console.error('Error RAE API, usando fallback:', error);
+    const fallback = localWords[Math.floor(Math.random() * localWords.length)];
+    setWord(fallback);
+    console.log('Palabra fallback:', fallback); 
+  }
+};
+
+
+  useEffect(() => {
+    fetchRandomWord();
+  }, []);
+
   const handleInputChange = (value, index) => {
     if (!isGameWon && !isGameLost) {
       const newGuess = [...currentGuess];
-      newGuess[index] = value.toUpperCase();  // Convertir a mayúsculas
+      newGuess[index] = value.toUpperCase();
       setCurrentGuess(newGuess);
     }
   };
 
-  // Función para manejar el envío del intento
   const handleSubmit = () => {
-    // Limpiar el mensaje de error
     setErrorMessage('');
-
-    // Verificar si el intento está completo (es decir, 5 letras)
     if (currentGuess.join('').length < 5) {
-      setErrorMessage('Completa todas las casillas antes de enviar.');  // Mostrar mensaje de error
+      setErrorMessage('Completa todas las casillas antes de enviar.');
       return;
     }
 
-    if (!isGameWon && !isGameLost && currentGuess.join('').length === 5) {
-      const newAttempt = currentGuess.map((char, index) => {
-        if (char === word[index].toUpperCase()) {
-          return { letter: char, status: 'correct' };  // Verde
-        } else if (word.toUpperCase().includes(char)) {
-          return { letter: char, status: 'present' };  // Naranja
-        } else {
-          return { letter: char, status: 'absent' };  // Gris
-        }
+    if (!isGameWon && !isGameLost) {
+      const newAttempt = currentGuess.map((char, idx) => {
+        if (char === word[idx]) return { letter: char, status: 'correct' };
+        else if (word.includes(char)) return { letter: char, status: 'present' };
+        else return { letter: char, status: 'absent' };
       });
 
       setAttempts([...attempts, newAttempt]);
 
-      // Comprobar si se ganó o perdió el juego
-      if (currentGuess.join('').toUpperCase() === word.toUpperCase()) {
-        setIsGameWon(true);
-      } else if (attempts.length + 1 === maxAttempts) {
-        setIsGameLost(true);
-      }
+      if (currentGuess.join('') === word) setIsGameWon(true);
+      else if (attempts.length + 1 === maxAttempts) setIsGameLost(true);
 
-      setCurrentGuess(['', '', '', '', '']);  // Reiniciar la fila de input
+      setCurrentGuess(['', '', '', '', '']);
     }
   };
 
@@ -78,7 +80,7 @@ export const useWordleLogic = () => {
     attempts,
     isGameWon,
     isGameLost,
-    errorMessage,  // Devolver el mensaje de error
+    errorMessage,
     word,
     handleInputChange,
     handleSubmit,

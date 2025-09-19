@@ -1,40 +1,109 @@
-.wordle-game {
-    text-align: center;
-  }
-  :root{
-    background-color: #303030;
+:root {
+  --background: #121213;
+  --text-color: #ffffff;
+  --cell-border: #3a3a3c;
+  --cell-empty: #121213;
+  --cell-correct: #538d4e;
+  --cell-present: #b59f3b;
+  --cell-absent: #3a3a3c;
+  --button-bg: #818384;
+  --button-text: #ffffff;
 }
-  .attempts-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .word-row {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-  }
-  
-  .word-cell, .word-input-cell {
-    width: 40px;
-    height: 40px;
-    text-align: center;
-    font-size: 24px;
-    border: 2px solid #ccc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .word-input-cell {
-    border: 2px solid #000;
-    outline: none;
-  }
-  
-  button {
-    margin-top: 20px;
-    padding: 10px 20px;
-    font-size: 16px;
-  }
-  
+
+body {
+  background-color: var(--background);
+  color: var(--text-color);
+  font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.wordle-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--background);
+  padding: 20px;
+}
+
+.wordle-game h1 {
+  font-size: 2.5rem;
+  margin: 0 0 20px;
+  color: var(--text-color);
+  text-transform: uppercase;
+}
+
+.attempts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 20px;
+}
+
+.word-row {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+}
+
+.word-cell, .word-input-cell {
+  width: 62px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  border: 2px solid var(--cell-border);
+  box-sizing: border-box;
+  color: var(--text-color);
+}
+
+.word-cell.empty {
+  background-color: var(--cell-empty);
+  border: 2px solid var(--cell-border);
+}
+
+.word-input-cell {
+  background-color: var(--cell-empty);
+  border: 2px solid #6c6c6c;
+  outline: none;
+  text-align: center;
+  caret-color: transparent;
+}
+
+.word-input-cell:focus {
+  border-color: #b1b1b1;
+}
+
+button {
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border: none;
+  border-radius: 4px;
+  padding: 12px 24px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover:not(:disabled) {
+  background-color: #6a6c6e;
+}
+
+button:disabled {
+  background-color: #565758;
+  cursor: not-allowed;
+}
+
+.error-message, .game-message {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-top: 20px;
+  text-transform: uppercase;
+}

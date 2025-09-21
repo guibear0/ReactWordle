@@ -16,23 +16,44 @@ export const useWordleLogic = () => {
     str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
   // Palabra aleatoria
-  const fetchRandomWord = async () => {
-    try {
+const fetchRandomWord = async () => {
+  try {
+    let validWord = "";
+
+    // Bucle hasta encontrar palabra válida
+    while (!validWord) {
       const res = await fetch(
         "https://rae-api.com/api/random?min_length=5&max_length=5"
       );
       if (!res.ok) throw new Error("Error al obtener palabra");
+
       const data = await res.json();
-      const apiWord = removeAccents(data.data.word).toUpperCase();
-      setWord(apiWord);
-      console.log("Palabra RAE:", apiWord);
-    } catch (error) {
-      console.error("Error con API, usando fallback:", error);
-      const fallback = localWords[Math.floor(Math.random() * localWords.length)];
-      setWord(fallback);
-      console.log("Palabra fallback:", fallback);
+      const rawWord = data.data.word;
+
+      // Eliminar acentos y pasar a mayúsculas
+      const cleanWord = removeAccents(rawWord)
+        .toUpperCase()
+        .trim();
+
+      // ✅ Validar: solo letras (sin guiones, números ni espacios)
+      if (/^[A-ZÁÉÍÓÚÜÑ]+$/.test(cleanWord)) {
+        validWord = cleanWord;
+      } else {
+        console.warn("Palabra descartada por caracteres raros:", rawWord);
+      }
     }
-  };
+
+    setWord(validWord);
+    console.log("Palabra RAE:", validWord);
+  } catch (error) {
+    console.error("Error con API, usando fallback:", error);
+    const fallback =
+      localWords[Math.floor(Math.random() * localWords.length)];
+    setWord(fallback);
+    console.log("Palabra fallback:", fallback);
+  }
+};
+
 
   // ✅ Validar si la palabra existe en la RAE o en fallback
   const validateWord = async (guess) => {
